@@ -64,7 +64,7 @@ def get_text_chunks(text):
 def get_vector_stores(text_chunks):
     """Convert text chunks into vector embeddings and store in FAISS."""
     embeddings = OpenAIEmbeddings(
-        model="text-embedding-3-small",
+        model="mistralai/mistral-embed",
         openai_api_base="https://openrouter.ai/api/v1",
         openai_api_key=OPENROUTER_KEY
     )
@@ -258,4 +258,5 @@ elif page == "🧠 Essay Grading":
                 result = _essay_grade(text_to_grade)
                 st.markdown("### 🏆 Evaluation Result:")
                 st.markdown(result, unsafe_allow_html=True)
+
 
