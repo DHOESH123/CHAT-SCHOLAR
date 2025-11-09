@@ -16,14 +16,14 @@ st.set_page_config(page_title="AI Study Assistant", layout="wide")
 DATA_DIR = "__data__"
 os.makedirs(DATA_DIR, exist_ok=True)
 
-# ✅ Load API key securely (from Streamlit Cloud Secrets or .env)
+# ✅ Use OpenRouter key securely (from Streamlit Secrets or Environment)
 OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY")
 
 if not OPENROUTER_KEY:
-    st.error("🚨 Missing OpenRouter API key. Please add it in Streamlit Cloud → Settings → Secrets.")
+    st.error("❌ OpenRouter API key not found! Please add it in Streamlit Secrets as `OPENROUTER_API_KEY`.")
     st.stop()
 
-# Initialize OpenAI client for essay grading
+# ✅ OpenRouter client
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=OPENROUTER_KEY
@@ -40,7 +40,6 @@ if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 if "rubric_text" not in st.session_state:
     st.session_state.rubric_text = ""
-
 
 # -----------------------------
 # HELPER FUNCTIONS
@@ -105,12 +104,10 @@ def _essay_grade(essay):
     messages = [
         {
             "role": "system",
-            "content": (
-                "You are an English academic writing evaluator. "
-                "Carefully grade the essay based on the given rubric and respond in English. "
-                "Give a detailed evaluation with section-wise scores and comments following the rubric.\n\n"
-                f"Rubric:\n{st.session_state.rubric_text}"
-            ),
+            "content": "You are an English academic writing evaluator. "
+                       "Carefully grade the essay based on the given rubric and respond in English. "
+                       "Give a detailed evaluation with section-wise scores and comments following the rubric."
+                       + st.session_state.rubric_text,
         },
         {"role": "user", "content": "Essay:\n" + essay},
     ]
@@ -127,7 +124,7 @@ def _essay_grade(essay):
 
 
 def chat_with_pdf_or_general(question):
-    """Answer using PDF context or fallback to general AI (clean formatted response)."""
+    """Answer using PDF context or fallback to general AI."""
     llm = ChatOpenAI(
         model="gpt-4o-mini",
         openai_api_base="https://openrouter.ai/api/v1",
@@ -139,22 +136,17 @@ def chat_with_pdf_or_general(question):
         if st.session_state.conversation_chain:
             response = st.session_state.conversation_chain({"question": question})
             answer = response.get("answer", "").strip()
-
             if not answer or "I don't know" in answer:
                 general = llm.invoke(
-                    f"User asked: '{question}'. "
-                    "Answer naturally in English, formatted using Markdown with bullets, bold, and clear sections."
+                    f"User asked: '{question}'. Respond clearly in Markdown format."
                 )
                 return general.content.strip()
-
             return answer
         else:
             general = llm.invoke(
-                f"User asked: '{question}'. "
-                "Respond clearly in English and format neatly using Markdown (use lists, headings, etc.)."
+                f"User asked: '{question}'. Respond clearly in Markdown format."
             )
             return general.content.strip()
-
     except Exception as e:
         return f"⚠️ Error while generating answer: {e}"
 
@@ -168,21 +160,18 @@ page = st.sidebar.radio(
     ["🏠 Home", "📄 PDF Chat", "📋 Essay Rubric", "🧠 Essay Grading"],
 )
 
-
 # -----------------------------
 # HOME PAGE
 # -----------------------------
 if page == "🏠 Home":
     st.title("🎓 AI-Powered Study Assistant")
     st.markdown("""
-    Welcome to your all-in-one AI Study Assistant!  
-    Here's what you can do:
-    - 📘 **Chat with your PDFs** to understand study material deeply.  
-    - 💬 **Ask general questions** — it can answer like ChatGPT.  
-    - 📋 **Create custom grading rubrics** for essays.  
-    - 🧠 **Auto-grade essays** with detailed feedback in English.
+    This app allows you to:
+    - Upload PDFs and **chat** with them.
+    - Ask **any kind of question**, not just about PDFs.
+    - Paste or upload essays for **automatic grading**.
+    - Store your own **grading rubric** for essay evaluation.
     """)
-
 
 # -----------------------------
 # PDF CHAT PAGE
@@ -215,12 +204,7 @@ elif page == "📄 PDF Chat":
     if st.session_state.chat_history:
         st.subheader("💬 Chat History:")
         for role, msg in st.session_state.chat_history:
-            if role == "🧑 User":
-                st.markdown(f"**{role}:** {msg}")
-            else:
-                st.markdown(f"**{role}:**")
-                st.markdown(msg, unsafe_allow_html=True)
-
+            st.markdown(f"**{role}:** {msg}", unsafe_allow_html=True)
 
 # -----------------------------
 # ESSAY RUBRIC PAGE
@@ -234,7 +218,6 @@ elif page == "📋 Essay Rubric":
     )
     if st.button("💾 Save Rubric"):
         st.success("Rubric saved successfully!")
-
 
 # -----------------------------
 # ESSAY GRADING PAGE
