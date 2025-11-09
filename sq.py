@@ -17,7 +17,7 @@ DATA_DIR = "__data__"
 os.makedirs(DATA_DIR, exist_ok=True)
 
 # ✅ Use your API key securely (environment variable recommended)
-OPENROUTER_KEY = "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"
+OPENROUTER_KEY = "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"
 
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
@@ -258,3 +258,4 @@ elif page == "🧠 Essay Grading":
                 result = _essay_grade(text_to_grade)
                 st.markdown("### 🏆 Evaluation Result:")
                 st.markdown(result, unsafe_allow_html=True)
+
